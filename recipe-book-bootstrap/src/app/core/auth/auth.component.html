@@ -1,0 +1,76 @@
+<ng-template appPlaceholder></ng-template>
+<div class="row justify-content-center mt-5">
+  <div class="col-12 col-md-6">
+    <!-- <app-alert [message]="errorMessage" *ngIf="errorMessage" (close)="onNullError()"></app-alert> -->
+
+    <form #authForm="ngForm" (ngSubmit)="onSubmit(authForm)">
+      <fieldset [disabled]="isLoading">
+        <label for="email">E-Mail</label>
+        <div class="form-group">  
+          <input
+            type="email"
+            id="email"
+            class="form-control"
+            ngModel
+            name="email"
+            required
+            email
+            placeholder="example@example.com"
+          />
+
+          <div class="error-message" *ngIf="errorType==0">
+            {{ errorMessage }}
+          </div>
+        </div>
+
+        <label for="password">Password</label>
+        <div class="form-group">
+          <input
+            type="password"
+            id="password"
+            class="form-control"
+            ngModel
+            name="password"
+            required
+            password
+            placeholder="******"
+          />
+
+          <div class="error-message" *ngIf="errorType==1">
+            {{ errorMessage }}
+          </div>
+        </div>
+
+        <div class="d-flex mt-2 align-content-center" *ngIf="!isLoginMode">
+          <button class="btn btn-primary" [disabled]="!authForm.valid">
+            Sign Up
+          </button>
+
+          <div class="d-flex align-items-center mx-2">
+            Already have an account?
+            <a class="mx-2" style="cursor: pointer" (click)="onSwitchMode()"
+              >Login</a
+            >
+          </div>
+        </div>
+
+        <div class="d-flex mt-2 align-content-center" *ngIf="isLoginMode">
+          <button class="btn btn-success" [disabled]="!authForm.valid">
+            Log In
+          </button>
+          
+          <div class="d-flex align-items-center mx-2">
+            Don't have an account?
+            <a class="mx-2" style="cursor: pointer" (click)="onSwitchMode()"
+              >Sign Up</a
+            >
+          </div>
+        </div>
+      </fieldset>
+    </form>
+
+    <div *ngIf="isLoading" style="text-align: center">
+      <app-loading-spinner></app-loading-spinner>
+    </div>
+  </div>
+</div>
