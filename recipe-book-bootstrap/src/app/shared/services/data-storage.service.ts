@@ -36,7 +36,7 @@ export class DataStorageService {
         'https://recipe-book-ea800-default-rtdb.firebaseio.com/recipes.json'
       )
       .pipe(
-        //rxjs map method here
+        //rxjs map method
         map((recipes) => {
           //standart map method
           return recipes.map((recipe) => {
@@ -47,7 +47,8 @@ export class DataStorageService {
           });
         }),
         tap((recipes: Recipe[]) => {
-          this.store.dispatch(new RecipeActions.SetRecipes(recipes));
+          this.store.dispatch(RecipeActions.setRecipes({recipes: recipes}));
+          // this.store.dispatch(new RecipeActions.SetRecipes(recipes));
         })
       );
   }

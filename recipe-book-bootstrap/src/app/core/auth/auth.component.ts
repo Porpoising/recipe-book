@@ -54,7 +54,8 @@ export class AuthComponent implements OnInit, OnDestroy {
   }
 
   onNullError() {
-    this.store.dispatch(new AuthActions.ClearError());
+    this.store.dispatch(AuthActions.clearError())
+    // this.store.dispatch(new AuthActions.ClearError()); // old syntax
   }
 
   private showErrorAlert(errorMessage: string) {
@@ -86,11 +87,13 @@ export class AuthComponent implements OnInit, OnDestroy {
 
     if (this.isLoginMode) {
       this.store.dispatch(
-        new AuthActions.LoginStart({ email: email, password: password })
+        // new AuthActions.LoginStart({ email: email, password: password }) // old syntax
+        AuthActions.loginStart({ email: email, password: password })
       );
     } else {
       this.store.dispatch(
-        new AuthActions.SignupStart({ email: email, password: password })
+        // new AuthActions.SignupStart({ email: email, password: password }) // old syntax
+        AuthActions.signupStart({ email: email, password: password })
       );
     }
     // this.authService.signUpIn(email, password, this.isLoginMode).subscribe({
