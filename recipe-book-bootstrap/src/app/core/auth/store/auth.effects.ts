@@ -1,6 +1,6 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Actions, ofType, Effect } from '@ngrx/effects';
+import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, of, switchMap, tap } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { Router } from '@angular/router';
@@ -29,7 +29,7 @@ const handleAuth = (
   const user = new User(email, localId, idToken, expirationDate);
   localStorage.setItem('userData', JSON.stringify(user));
 
-  return new AuthActions.AuthSuccess({
+  return AuthActions.authSuccess({
     email: email,
     userId: localId,
     token: idToken,
@@ -38,10 +38,10 @@ const handleAuth = (
   });
 };
 
-const handleError = (errorResponse) => {
+const handleError = (errorResponse: HttpErrorResponse) => {
   let errorMessage = 'An unknown error occurred!';
   if (!errorResponse.error || !errorResponse.error.error) {
-    return of(new AuthActions.AuthFail(errorMessage));
+    return of(AuthActions.authFail({ errorMessage: errorMessage }));
   }
   switch (errorResponse.error.error.message) {
     case 'EMAIL_EXISTS':
@@ -54,142 +54,151 @@ const handleError = (errorResponse) => {
       errorMessage = 'This password is not correct.';
       break;
   }
-  return of(new AuthActions.AuthFail(errorMessage));
+  return of(AuthActions.authFail({ errorMessage: errorMessage }));
 };
 
 @Injectable()
 export class AuthEffects {
-  @Effect()
-  authSignup = this.actions$.pipe(
-    ofType(AuthActions.SIGNUP_START),
-    switchMap((signupAction: AuthActions.SignupStart) => {
-      return this.http
-        .post<AuthResponseData>(
-          'https://identitytoolkit.googleapis.com' +
-            '/v1/accounts:signUp?' +
-            'key=' +
-            environment.firebaseAPIKey,
-          {
-            email: signupAction.payload.email,
-            password: signupAction.payload.password,
-            returnSecureToken: true,
+  authSignup$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.SIGNUP_START),
+      switchMap((signupAction: any) => {
+        return this.http
+          .post<AuthResponseData>(
+            'https://identitytoolkit.googleapis.com' +
+              '/v1/accounts:signUp?' +
+              'key=' +
+              environment.firebaseAPIKey,
+            {
+              email: signupAction.email,
+              password: signupAction.password,
+              returnSecureToken: true,
+            }
+          )
+          .pipe(
+            tap((responseData) => {
+              this.authService.setLogoutTimer(+responseData.expiresIn * 1000);
+            }),
+            map((responseData) => {
+              return handleAuth(
+                responseData.email,
+                responseData.localId,
+                responseData.idToken,
+                responseData.expiresIn
+              );
+            }),
+            catchError((errorResponse: HttpErrorResponse) => {
+              return handleError(errorResponse);
+            })
+          );
+      })
+    )
+  );
+
+  authLogin = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.LOGIN_START),
+      switchMap((authData: any) => {
+        return this.http
+          .post<AuthResponseData>(
+            'https://identitytoolkit.googleapis.com' +
+              '/v1/accounts:signInWithPassword?' +
+              'key=' +
+              environment.firebaseAPIKey,
+            {
+              email: authData.email,
+              password: authData.password,
+              returnSecureToken: true,
+            }
+          )
+          .pipe(
+            tap((responseData) => {
+              this.authService.setLogoutTimer(+responseData.expiresIn * 1000);
+            }),
+            map((responseData) => {
+              return handleAuth(
+                responseData.email,
+                responseData.localId,
+                responseData.idToken,
+                responseData.expiresIn
+              );
+            }),
+            catchError((errorResponse) => {
+              return handleError(errorResponse);
+            })
+          );
+      })
+    )
+  );
+
+  authRedirect = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.AUTH_SUCCESS),
+        tap((authSuccessAction: any) => {
+          if (authSuccessAction.redirect) {
+            this.router.navigate(['/']);
           }
-        )
-        .pipe(
-          tap((responseData) => {
-            this.authService.setLogoutTimer(+responseData.expiresIn * 1000);
-          }),
-          map((responseData) => {
-            return handleAuth(
-              responseData.email,
-              responseData.localId,
-              responseData.idToken,
-              responseData.expiresIn
-            );
-          }),
-          catchError((errorResponse) => {
-            return handleError(errorResponse);
-          })
+        })
+      ),
+    { dispatch: false }
+  );
+
+  autoLogin = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.AUTO_LOGIN),
+      map(() => {
+        const userData: {
+          email: string;
+          id: string;
+          _token: string;
+          _tokenExpirationDate: string;
+        } = JSON.parse(localStorage.getItem('userData'));
+
+        if (!userData) {
+          return { type: 'NO_LOGGED_USER_YET' };
+        }
+
+        const loadedUser = new User(
+          userData.email,
+          userData.id,
+          userData._token,
+          new Date(userData._tokenExpirationDate)
         );
-    })
-  );
 
-  @Effect()
-  authLogin = this.actions$.pipe(
-    ofType(AuthActions.LOGIN_START),
-    switchMap((authData: AuthActions.LoginStart) => {
-      return this.http
-        .post<AuthResponseData>(
-          'https://identitytoolkit.googleapis.com' +
-            '/v1/accounts:signInWithPassword?' +
-            'key=' +
-            environment.firebaseAPIKey,
-          {
-            email: authData.payload.email,
-            password: authData.payload.password,
-            returnSecureToken: true,
-          }
-        )
-        .pipe(
-          tap((responseData) => {
-            this.authService.setLogoutTimer(+responseData.expiresIn * 1000);
-          }),
-          map((responseData) => {
-            return handleAuth(
-              responseData.email,
-              responseData.localId,
-              responseData.idToken,
-              responseData.expiresIn
-            );
-          }),
-          catchError((errorResponse) => {
-            return handleError(errorResponse);
-          })
-        );
-    })
-  );
+        if (loadedUser.token) {
+          // this.user.next(loadedUser);
+          const expirationDuration =
+            new Date(userData._tokenExpirationDate).getTime() -
+            new Date().getTime();
+          this.authService.setLogoutTimer(expirationDuration);
 
-  @Effect({ dispatch: false })
-  authRedirect = this.actions$.pipe(
-    ofType(AuthActions.AUTH_SUCCESS),
-    tap((authSuccessAction: AuthActions.AuthSuccess) => {
-      if (authSuccessAction.payload.redirect) {
-        this.router.navigate(['/']);
-      }
-    })
-  );
+          return AuthActions.authSuccess({
+            email: loadedUser.email,
+            userId: loadedUser.id,
+            token: loadedUser.token,
+            expirationDate: new Date(userData._tokenExpirationDate),
+            redirect: false,
+          });
 
-  @Effect()
-  autoLogin = this.actions$.pipe(
-    ofType(AuthActions.AUTO_LOGIN),
-    map(() => {
-      const userData: {
-        email: string;
-        id: string;
-        _token: string;
-        _tokenExpirationDate: string;
-      } = JSON.parse(localStorage.getItem('userData'));
-
-      if (!userData) {
+          // this.autoLogOut(expirationDuration);
+        }
         return { type: 'NO_LOGGED_USER_YET' };
-      }
-
-      const loadedUser = new User(
-        userData.email,
-        userData.id,
-        userData._token,
-        new Date(userData._tokenExpirationDate)
-      );
-
-      if (loadedUser.token) {
-        // this.user.next(loadedUser);
-        const expirationDuration =
-          new Date(userData._tokenExpirationDate).getTime() -
-          new Date().getTime();
-        this.authService.setLogoutTimer(expirationDuration);
-
-        return new AuthActions.AuthSuccess({
-          email: loadedUser.email,
-          userId: loadedUser.id,
-          token: loadedUser.token,
-          expirationDate: new Date(userData._tokenExpirationDate),
-          redirect: false,
-        });
-
-        // this.autoLogOut(expirationDuration);
-      }
-      return { type: 'NO_LOGGED_USER_YET' };
-    })
+      })
+    )
   );
 
-  @Effect({ dispatch: false })
-  authLogout = this.actions$.pipe(
-    ofType(AuthActions.LOGOUT),
-    tap(() => {
-      this.authService.clearLogoutTimer();
-      localStorage.removeItem('userData');
-      this.router.navigate(['/signup']);
-    })
+  authLogout = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.LOGOUT),
+        tap(() => {
+          this.authService.clearLogoutTimer();
+          localStorage.removeItem('userData');
+          this.router.navigate(['/signup']);
+        })
+      ),
+    { dispatch: false }
   );
 
   constructor(

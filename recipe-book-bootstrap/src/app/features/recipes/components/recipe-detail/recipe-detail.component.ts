@@ -54,7 +54,8 @@ export class RecipeDetailComponent implements OnInit {
     //   this.shoppingListService.addIngredient(ingredient);
     // });
     this.store.dispatch(
-      new ShoppingListActions.AddIngredients(this.recipe.ingredients)
+      ShoppingListActions.addIngredients({ingredients: this.recipe.ingredients})
+      // new ShoppingListActions.AddIngredients(this.recipe.ingredients)
     );
   }
 
@@ -65,7 +66,8 @@ export class RecipeDetailComponent implements OnInit {
 
   onDeleteRecipe() {
     // this.recipeService.deleteRecipe(this.recipeId);
-    this.store.dispatch(new RecipeActions.DeleteRecipe(this.recipeId));
+    // this.store.dispatch(new RecipeActions.DeleteRecipe(this.recipeId));
+    this.store.dispatch(RecipeActions.deleteRecipe({index: this.recipeId}));
     this.router.navigate(['/recipes']);
   }
 }

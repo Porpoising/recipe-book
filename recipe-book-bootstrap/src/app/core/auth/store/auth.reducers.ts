@@ -1,3 +1,5 @@
+import { createReducer, on, Action } from '@ngrx/store';
+
 import { User } from '../user.model';
 import * as AuthActions from './auth.actions';
 
@@ -13,51 +15,45 @@ const initialState: State = {
   loading: false,
 };
 
-export function authReducer(state = initialState, action: AuthActions.Actions) {
-  switch (action.type) {
-    case AuthActions.AUTH_SUCCESS:
-      const user = new User(
-        action.payload.email,
-        action.payload.userId,
-        action.payload.token,
-        action.payload.expirationDate
-      );
-      return {
-        ...state,
-        authError: null,
-        user: user,
-        loading: false,
-      };
+export const _authReducer = createReducer(
+  initialState,
 
-    case AuthActions.LOGOUT:
-      return {
-        ...state,
-        user: null,
-      };
+  on(AuthActions.authSuccess, (state, action) => ({
+    ...state,
+    user: new User(
+      action.email,
+      action.userId,
+      action.token,
+      action.expirationDate
+    ),
+    authError: null,
+    loading: false,
+  })),
 
-    case AuthActions.LOGIN_START:
-    case AuthActions.SIGNUP_START:
-      return {
-        ...state,
-        authError: null,
-        loading: true,
-      };
+  on(AuthActions.logout, (state) => ({
+    ...state,
+    user: null,
+  })),
 
-    case AuthActions.AUTH_FAIL:
-      return {
-        ...state,
-        user: null,
-        authError: action.payload,
-        loading: false,
-      };
+  on(AuthActions.signupStart, AuthActions.loginStart, (state) => ({
+    ...state,
+    authError: null,
+    loading: true,
+  })),
 
-    case AuthActions.CLEAR_ERROR:
-      return {
-        ...state,
-        authError: null,
-      };
+  on(AuthActions.authFail, (state, action) => ({
+    ...state,
+    user: null,
+    authError: action.errorMessage,
+    loading: false,
+  })),
 
-    default:
-      return state;
-  }
+  on(AuthActions.clearError, (state) => ({
+    ...state,
+    authError: null,
+  }))
+);
+
+export function authReducer(state: State, action: Action) {
+  return _authReducer(state, action);
 }
