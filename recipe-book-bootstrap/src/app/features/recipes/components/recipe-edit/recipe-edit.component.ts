@@ -83,7 +83,10 @@ export class RecipeEditComponent implements OnInit, OnDestroy {
   }
 
   get controls() {
-    return (<FormArray>this.recipeForm.get('ingredients')).controls;
+    // console.log((<FormArray>this.recipeForm.get('ingredients')).controls);
+    // console.log('---------------------------------------------------');
+
+    return (this.recipeForm.get('ingredients') as FormArray).controls;
   }
 
   private initForm() {
@@ -108,6 +111,8 @@ export class RecipeEditComponent implements OnInit, OnDestroy {
           recipeImagePath = recipe.imagePath;
 
           if (recipe['ingredients']) {
+            recipeIngredients = new FormArray([])
+
             for (let ingredient of recipe.ingredients) {
               recipeIngredients.push(
                 new FormGroup({

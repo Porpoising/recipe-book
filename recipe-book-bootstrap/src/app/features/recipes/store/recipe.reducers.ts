@@ -24,12 +24,27 @@ export const _recipeReducer = createReducer(
     recipes: state.recipes.concat({ ...action.recipe }),
   })),
 
-  on(RecipesActions.updateRecipe, (state, action) => ({
-    ...state,
-    recipes: state.recipes.map((recipe, index) =>
-      index === action.index ? { ...action.recipe } : recipe
-    ),
-  })),
+  on(RecipesActions.updateRecipe, (state, action) => {
+    const updatedRecipe = {
+      ...state.recipes[action.index],
+      ...action.recipe,
+    };
+
+    const updatedRecipes = [...state.recipes];
+    updatedRecipes[action.index] = updatedRecipe;
+
+    console.log(state, action)
+    console.log('_______________________')
+
+    return {
+      ...state,
+      recipes: updatedRecipes,
+    };
+
+    // recipes: state.recipes.map((recipe, index) =>
+    //   index === action.index ? { ...action.recipe } : recipe
+    // ),
+  }),
 
   on(RecipesActions.deleteRecipe, (state, action) => ({
     ...state,
