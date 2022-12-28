@@ -20,9 +20,10 @@ import { AuthService } from './core/auth/services/auth.service';
 import { AuthEffects } from './core/auth/store/auth.effects';
 import { RecipeEffects } from './features/recipes/store/recipe.effects';
 import { environment } from '../environments/environment';
+import { FooterComponent } from './layout/footer/footer.component';
 
 @NgModule({
-  declarations: [AppComponent, HeaderComponent],
+  declarations: [AppComponent, HeaderComponent, FooterComponent],
   imports: [
     BrowserModule.withServerTransition({ appId: 'serverApp' }),
     SharedModule,
