@@ -1,0 +1,78 @@
+<nav class="navbar navbar-expand navbar-dark bg-primary">
+  <div class="container-fluid">
+    <a class="navbar-brand mb-0 h1" [routerLink]="['/']"> Recipe Book </a>
+
+    <div class="collapse navbar-collapse justify-content-between">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            [routerLink]="['/recipes']"
+            routerLinkActive="active"
+          >
+            Recipes
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            [routerLink]="['/shopping-list']"
+            routerLinkActive="active"
+          >
+            Shopping list
+          </a>
+        </li>
+      </ul>
+
+      <ul class="navbar-nav">
+        <li ngbDropdown class="nav-item" *ngIf="isLoggedIn">
+          <a
+            role="button"
+            class="nav-link"
+            id="dropdownManage"
+            ngbDropdownToggle
+          >
+            Manage
+          </a>
+
+          <div ngbDropdownMenu aria-labelledby="dropdownManage">
+            <!-- <a role="button" ngbDropdownItem (click)="onSaveData()">
+              Save Data
+            </a> -->
+            <a role="button" ngbDropdownItem (click)="onFetchData()">
+              Fetch Data
+            </a>
+          </div>
+        </li>
+
+        <li ngbDropdown class="nav-item" *ngIf="isLoggedIn" display="dynamic">
+          <a
+            role="button"
+            class="nav-link"
+            id="dropdownProfile"
+            ngbDropdownToggle
+          >
+            Profile
+          </a>
+
+          <div ngbDropdownMenu aria-labelledby="dropdownProfile">
+            <a role="button" ngbDropdownItem>My Recipes</a>
+            <a role="button" ngbDropdownItem>Settings</a>
+            <a role="button" ngbDropdownItem (click)="onLogOut()">Log Out</a>
+          </div>
+        </li>
+
+        <li class="nav-item" *ngIf="!isLoggedIn">
+          <a
+            class="nav-link"
+            [routerLink]="['/signup']"
+            routerLinkActive="active"
+          >
+            Log In
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
