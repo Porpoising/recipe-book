@@ -1,2 +1,2 @@
 # recipe-book
-recipe book home project (angular)
+recipe book project (angular) (udemy course)
